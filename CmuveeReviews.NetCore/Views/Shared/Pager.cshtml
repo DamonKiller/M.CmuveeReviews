@@ -1,0 +1,177 @@
+﻿@{
+    Layout = null;
+}
+@model CmuveeReviews.NetCore.Models.BasePager
+<div id="PagerDiv" style="text-align:center;">
+    @if (Model.IsShowPageSize)
+    {
+        <div class="pagination">
+            <span class="span-float" style="line-height: 30px; float: right;">共<strong style="color: #337ab7;">@Model.TotalItemCount</strong>条
+                共<strong style="color:#337ab7;"
+				id="@(Model.TolCountID)">@Model.TotalPageCount</strong>页 每页<input id="pageSize" style="line-height:20px;width:40px;height:21px;color:#337ab7;text-align:center;" 
+				onkeyup="value=value.replace(/[^0-9]/g,'');" onblur="if(value<1)value=1;" value="@Model.PageSize"/>条&nbsp;</span>
+        </div>
+    }
+    <div id="@(Model.PaginationID)" class="pagination">
+    </div>
+    @if (Model.IsShowGoto)
+    {
+        <div class="pagination">
+            <span class="span-float" style="line-height: 30px; float: right;">&nbsp;跳到第<input id="goTo" style="line-height:20px;width:40px;height:21px;color:#337ab7;text-align:center;" 
+				onkeyup="value=value.replace(/[^0-9]/g,'');"  onblur="if(value<1)value=1;" value="@Model.CurrentPageIndex"/>页
+            </span>
+            <div id="goToBtn" class="btn btn-default">
+                跳转
+            </div>
+        </div>
+    }
+    <input id="SearchCondition" value="" type="hidden" />
+</div>
+<script src="/js/jquery.Paginator.js"></script>
+<script type="text/javascript">
+    var pageIndex =  @Model.CurrentPageIndex;
+    var pageSize = @Model.PageSize;
+    
+    $(document).ready(function () {
+		
+		//获取URL上的参数
+		(function ($) {
+			$.getUrlParam = function (name) {
+				if($("#SearchCondition").val()!=""){
+					var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+					var r = $("#SearchCondition").val().match(reg);
+					if (r != null) return decodeURI(r[2]).trim(); return null;
+				}else{
+					var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+					var r = window.location.search.substr(1).match(reg);
+					if (r != null) return decodeURI(r[2]); return null;
+				}
+			}
+		})(jQuery);
+
+		//初始化搜索条件的值
+		$("#searchForm").children().each(function (i,n) {
+			var obj= $(n);	
+            var param = $.getUrlParam(obj.attr("name"));
+            if(param!=null)
+            {
+				if(obj.attr("type")=="checkbox"){
+					var str=window.location.search.substr(1);
+					if(str.indexOf(obj.attr("name")+"="+obj.val())>=0){
+						obj.attr("checked",true);
+					}else{
+						obj.attr("checked",false);
+					}
+				}else{
+                    if(obj.attr("name") == "startTime" || obj.attr("name") == "endTime"){
+                        obj.val(unescape(param).replace(/\+/g," "));
+                    }else{
+					    obj.val(unescape(param).replace(/\+/g,""));
+                    }
+				}
+            }
+		});
+
+		//$("#SearchCondition").val($("#searchForm").serialize());
+        $.each(window.location.search.substr(1).split("&"), function (i, item) {
+            if (item.toLowerCase().indexOf("pageindex") < 0 && item.toLowerCase().indexOf("pagesize") < 0) {
+                var str = $("#SearchCondition").val() + item + "&";
+                $("#SearchCondition").val(str.substr(0,str.length-1));
+            }
+        });
+
+        //新分页
+        $.jqPaginator('#Pagination', {
+            totalPages: @Model.TotalPageCount ,
+            visiblePages: 7,
+            currentPage: @Model.CurrentPageIndex ,
+            first: '<li class="first"><a href="javascript:void(0);">首页</a></li>',
+            prev: '<li class="prev"><a href="javascript:void(0);"><i class="arrow arrow2"></i>上一页</a></li>',
+            next: '<li class="next"><a href="javascript:void(0);">下一页<i class="arrow arrow3"></i></a></li>',
+            last: '<li class="last"><a href="javascript:void(0);">末页</a></li>',
+            page: '<li class="page"><a href="javascript:void(0);">{{page}}</a></li>',
+            onPageChange: OnPageChanged
+        });
+
+        $("#formPageSize").change(function(){
+            pageSize = $(this).val();
+            $("#pageSize").val(pageSize);
+        });
+
+        $("#pageSize").change(function(){
+            pageSize = $(this).val();
+            $("#formPageSize").val(pageSize);
+        });
+
+        $("#goToBtn").click(function(){
+            pageIndex = 0;
+            OnPageChanged($("#goTo").val());
+        });
+
+		$("#pageSize").keydown(function(e){
+			if(e.keyCode==13){
+				pageIndex = 0;
+				pageSize = $("#pageSize").val();
+				OnPageChanged(1);
+			}
+		});
+
+		$("#goTo").keydown(function(e){
+			if(e.keyCode==13){
+				pageIndex = 0;
+				OnPageChanged($("#goTo").val());
+			}
+		});
+    });
+
+	//分页用
+    function OnPageChanged(page_id) {
+        if (page_id != pageIndex) {
+            if (page_id != null && page_id >= 0) {
+                pageIndex = page_id;
+            }
+            location.href= "/@Html.ViewContext.RouteData.Values["controller"]/@Html.ViewContext.RouteData.Values["action"]?pageIndex=" + pageIndex +
+                "&pageSize=" + pageSize + "&" + $("#SearchCondition").val();
+        }
+        return false;
+    }  
+</script>
+<style type="text/css">
+    .pagination li a
+    {
+        margin-right: 5px;
+        background: #fff;
+        color: #333;
+        border-color: #278296;
+    }
+    .pagination li a:hover
+    {
+        color: #fff;
+        background: #80BDCB;
+        border-color: #80BDCB;
+    }
+    .pagination .active a
+    {
+        color: #fff;
+        background: #278296;
+        border-color: #278296;
+    }
+    .pagination .active a:hover
+    {
+        color: #fff;
+        background: #80BDCB;
+        border-color: #80BDCB;
+    }
+    #goToBtn
+    {
+        border-radius: 2px; 
+        height: 32px;
+        border-color: #80BDCB;
+    }
+    #goToBtn:hover
+    {
+        color: #fff;
+        background: #80BDCB;
+        border-color: #80BDCB;
+    }
+</style>
